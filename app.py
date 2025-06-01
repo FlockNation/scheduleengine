@@ -140,10 +140,46 @@ def generate_mlb_schedule(team):
     conf = get_conference("MLB", division)
     same_league_teams = [t for d in mlb_divisions if get_conference("MLB", d) == conf and d != division for t in get_teams_in_division("MLB", d)]
     interleague_teams = [t for d in mlb_divisions if get_conference("MLB", d) != conf for t in get_teams_in_division("MLB", d)]
-    schedule = generate_balanced_schedule(team, division_teams, 57, 6)
-    schedule += generate_balanced_schedule(team, same_league_teams, 60, 2)
-    schedule += generate_balanced_schedule(team, interleague_teams, 45, 3)
-    return random.sample(schedule, 162)
+
+    schedule = []
+
+    def add_series(opponents, series_count, games_per_series):
+        chosen_teams = random.sample(opponents, series_count)
+        for opp in chosen_teams:
+            for game_num in range(1, games_per_series + 1):
+                if game_num % 2 == 1:
+                    matchup = f"{team} vs {opp}"
+                else:
+                    matchup = f"{opp} vs {team}"
+                schedule.append(matchup)
+
+    division_series_teams = random.sample(division_teams, min(len(division_teams), 3))
+    for opp in division_series_teams:
+        for _ in range(2):
+            for game_num in range(1, 4):
+                if game_num % 2 == 1:
+                    schedule.append(f"{team} vs {opp}")
+                else:
+                    schedule.append(f"{opp} vs {team}")
+
+    add_series(same_league_teams, 15, 2)
+    add_series(interleague_teams, 15, 3)
+
+    random.shuffle(schedule)
+    if len(schedule) > 162:
+        schedule = schedule[:162]
+    elif len(schedule) < 162:
+        extra_needed = 162 - len(schedule)
+        extra_games = []
+        for _ in range(extra_needed):
+            opp = random.choice(division_teams)
+            if len(extra_games) % 2 == 0:
+                extra_games.append(f"{team} vs {opp}")
+            else:
+                extra_games.append(f"{opp} vs {team}")
+        schedule += extra_games
+
+    return schedule
 
 def generate_nhl_schedule(team):
     division = find_division(team, "NHL")
