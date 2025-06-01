@@ -257,7 +257,7 @@ def generate_nhl_schedule(team):
     add_games(other_conf_teams, 2)
 
     random.shuffle(schedule)
-    return schedule[:82]
+    return schedule
 
 @app.route("/")
 def index():
