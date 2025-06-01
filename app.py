@@ -116,8 +116,8 @@ def generate_nfl_schedule(team):
     scheduled_teams.discard(team)
 
     remaining_teams = [t for t in nfl_teams if t != team and t not in scheduled_teams]
-    extra_opponents = random.sample(remaining_teams, 2)
-    extra_games = generate_balanced_schedule(team, extra_opponents, 2, 1)
+    extra_opponents = random.sample(remaining_teams, 3)
+    extra_games = generate_balanced_schedule(team, extra_opponents, 3, 1)
 
     all_games = division_games + same_conf_games + inter_conf_games + extra_games
     return all_games
