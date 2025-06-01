@@ -17,12 +17,20 @@ leagueButtons.forEach(button => {
     currentLeague = button.getAttribute("data-league");
     populateTeams(currentLeague);
     dropdownContainer.style.display = "block";
-    fetchAndDisplaySchedule(currentLeague, "All Teams");
+    if (teamSelect.value === "All Teams") {
+      scheduleDisplay.innerHTML = `<p>Please select a specific team to see schedule.</p>`;
+    } else {
+      fetchAndDisplaySchedule(currentLeague, teamSelect.value);
+    }
   });
 });
 
 teamSelect.addEventListener("change", () => {
   const selectedTeam = teamSelect.value;
+  if (selectedTeam === "All Teams") {
+    scheduleDisplay.innerHTML = `<p>Please select a specific team to see schedule.</p>`;
+    return;
+  }
   fetchAndDisplaySchedule(currentLeague, selectedTeam);
 });
 
@@ -41,7 +49,7 @@ async function fetchAndDisplaySchedule(league, team) {
   console.log("Fetching schedule for", league, team);
   scheduleDisplay.innerHTML = `<p>Loading schedule...</p>`;
   try {
-    const response = await fetch("/get_schedule", {
+    const response = await fetch("/generate_schedule", { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ league, team }),
@@ -59,7 +67,7 @@ async function fetchAndDisplaySchedule(league, team) {
 
 function renderSchedule(team, schedule) {
   let html = `<h2>${team === "All Teams" ? currentLeague + " League Schedule" : team + " Schedule"}</h2>`;
-  if (schedule.length === 0) {
+  if (!schedule || schedule.length === 0) {
     html += "<p>No schedule available.</p>";
   } else {
     html += "<div>";
