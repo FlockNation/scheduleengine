@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 import random
-from collections import defaultdict
 
 app = Flask(__name__)
 
@@ -194,27 +193,25 @@ def generate_nba_schedule(team):
 
     division_opponents = [t for t in division_teams if t != team]
     for opp in division_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 2)
-        schedule.extend([f"{opp} vs {team}"] * 2)
-      
-    conf_divisions = [d for d in nba_divisions if get_conference("NBA", d) == conf and d != division]
+        schedule.extend([f"{team} vs {opp}"] * 4)
+
+    conf_divs = [d for d in nba_divisions if get_conference("NBA", d) == conf and d != division]
     conf_teams = []
-    for d in conf_divisions:
+    for d in conf_divs:
         conf_teams.extend(get_teams_in_division("NBA", d))
-    conf_teams = [t for t in conf_teams if t != team]
-    for opp in conf_teams:
-        games_count = random.choice([3,4])
-        for _ in range(games_count):
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            schedule.append(home_away)
+
+    conf_opponents = [t for t in conf_teams if t != team]
+    for opp in conf_opponents:
+        schedule.extend([f"{team} vs {opp}"] * 3)
 
     other_conf_divs = [d for d in nba_divisions if get_conference("NBA", d) != conf]
     other_conf_teams = []
     for d in other_conf_divs:
         other_conf_teams.extend(get_teams_in_division("NBA", d))
-    for opp in other_conf_teams:
+
+    non_conf_opponents = [t for t in other_conf_teams if t != team]
+    for opp in non_conf_opponents:
         schedule.append(f"{team} vs {opp}")
-        schedule.append(f"{opp} vs {team}")
 
     random.shuffle(schedule)
     return schedule
@@ -222,44 +219,61 @@ def generate_nba_schedule(team):
 def generate_mlb_schedule(team):
     division = find_division(team, "MLB")
     division_teams = get_teams_in_division("MLB", division)
-    league = get_conference("MLB", division)
+    conf = get_conference("MLB", division)
 
     schedule = []
 
-    division_opponents = [t for t in division_teams if t != team]
-    for opp in division_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 6)
-        schedule.extend([f"{opp} vs {team}"] * 7)
+    def split_series_19():
+        return [3,3,3,4,3,3]
 
-    other_divisions = [d for d in mlb_divisions if get_conference("MLB", d) == league and d != division]
-    intraleague_teams = []
-    for d in other_divisions:
-        intraleague_teams.extend(get_teams_in_division("MLB", d))
-    intraleague_teams = [t for t in intraleague_teams if t != team]
-    for opp in intraleague_teams:
-        games_count = random.choice([6,7])
-        for _ in range(games_count):
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            schedule.append(home_away)
+    def split_series_6():
+        return [3,3]
 
-    other_league_divs = [d for d in mlb_divisions if get_conference("MLB", d) != league]
-    rival_div = random.choice(other_league_divs)
-    rival_team = random.choice(get_teams_in_division("MLB", rival_div))
+    for opp in division_teams:
+        if opp == team:
+            continue
+        series_lengths = split_series_19()
+        home_away_flag = True
+        for length in series_lengths:
+            for game_num in range(length):
+                if home_away_flag:
+                    game = f"{team} vs {opp}"
+                else:
+                    game = f"{opp} vs {team}"
+                schedule.append(game)
+            home_away_flag = not home_away_flag
 
-    schedule.extend([f"{team} vs {rival_team}"] * 2)
-    schedule.extend([f"{rival_team} vs {team}"] * 2)
+    same_league_divisions = [d for d in mlb_divisions if get_conference("MLB", d) == conf and d != division]
+    other_division_teams = []
+    for d in same_league_divisions:
+        other_division_teams.extend(get_teams_in_division("MLB", d))
 
-    other_league_teams = []
-    for d in other_league_divs:
-        other_league_teams.extend(get_teams_in_division("MLB", d))
-    other_league_teams = [t for t in other_league_teams if t != rival_team and t != team]
+    for opp in other_division_teams:
+        series_lengths = split_series_6()
+        home_away_flag = True
+        for length in series_lengths:
+            for _ in range(length):
+                if home_away_flag:
+                    game = f"{team} vs {opp}"
+                else:
+                    game = f"{opp} vs {team}"
+                schedule.append(game)
+            home_away_flag = not home_away_flag
 
-    for opp in other_league_teams:
-        home_away = random.choice([
-            [f"{team} vs {opp}"]*3,
-            [f"{opp} vs {team}"]*3
-        ])
-        schedule.extend(home_away)
+    other_league_divisions = [d for d in mlb_divisions if get_conference("MLB", d) != conf]
+    interleague_teams = []
+    for d in other_league_divisions:
+        interleague_teams.extend(get_teams_in_division("MLB", d))
+
+    for opp in interleague_teams:
+        home_away_flag = True
+        series_length = 3
+        for _ in range(series_length):
+            if home_away_flag:
+                game = f"{team} vs {opp}"
+            else:
+                game = f"{opp} vs {team}"
+            schedule.append(game)
 
     random.shuffle(schedule)
     return schedule
@@ -273,43 +287,43 @@ def generate_nhl_schedule(team):
 
     division_opponents = [t for t in division_teams if t != team]
     for opp in division_opponents:
-        games_count = random.choice([3,4])
-        for _ in range(games_count):
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            schedule.append(home_away)
+        schedule.extend([f"{team} vs {opp}"] * 6)
 
-    conf_divisions = [d for d in nhl_divisions if get_conference("NHL", d) == conf and d != division]
+    conf_divs = [d for d in nhl_divisions if get_conference("NHL", d) == conf and d != division]
     conf_teams = []
-    for d in conf_divisions:
+    for d in conf_divs:
         conf_teams.extend(get_teams_in_division("NHL", d))
-    for opp in conf_teams:
-        for _ in range(3):
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            schedule.append(home_away)
+
+    conf_opponents = [t for t in conf_teams if t != team]
+    for opp in conf_opponents:
+        schedule.extend([f"{team} vs {opp}"] * 4)
 
     other_conf_divs = [d for d in nhl_divisions if get_conference("NHL", d) != conf]
     other_conf_teams = []
     for d in other_conf_divs:
         other_conf_teams.extend(get_teams_in_division("NHL", d))
-    for opp in other_conf_teams:
+
+    non_conf_opponents = [t for t in other_conf_teams if t != team]
+    for opp in non_conf_opponents:
         schedule.append(f"{team} vs {opp}")
-        schedule.append(f"{opp} vs {team}")
 
     random.shuffle(schedule)
     return schedule
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-@app.route('/get_schedule', methods=['POST'])
-def get_schedule():
+@app.route("/generate_schedule", methods=["POST"])
+def generate_schedule():
     data = request.json
-    league = data.get('league')
-    team = data.get('team')
+    team = data.get("team")
+    league = data.get("league")
 
-    if league not in teams or team not in teams[league]:
-        return jsonify({"error": "Invalid league or team"}), 400
+    if league not in teams:
+        return jsonify({"error": "Invalid league"}), 400
+    if team not in teams[league]:
+        return jsonify({"error": "Invalid team"}), 400
 
     if league == "NFL":
         schedule = generate_nfl_schedule(team)
@@ -324,5 +338,5 @@ def get_schedule():
 
     return jsonify({"schedule": schedule})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
