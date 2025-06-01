@@ -38,17 +38,21 @@ function populateTeams(league) {
 }
 
 async function fetchAndDisplaySchedule(league, team) {
+  console.log("Fetching schedule for", league, team);
   scheduleDisplay.innerHTML = `<p>Loading schedule...</p>`;
   try {
     const response = await fetch("/get_schedule", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ league, team })
+      body: JSON.stringify({ league, team }),
     });
+    console.log("Response status:", response.status);
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
+    console.log("Received data:", data);
     renderSchedule(team, data.schedule);
   } catch (error) {
+    console.error(error);
     scheduleDisplay.innerHTML = `<p>Error loading schedule.</p>`;
   }
 }
