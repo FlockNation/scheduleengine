@@ -1,81 +1,68 @@
-document.getElementById('leagueSelect').addEventListener('change', async function() {
-    const league = this.value;
-    const teamSelect = document.getElementById('teamSelect');
+const teams = {
+  NFL: ["All Teams", "Arizona Cardinals", "Atlanta Falcons", "Baltimore Ravens", "Buffalo Bills", "Carolina Panthers", "Chicago Bears", "Cincinnati Bengals", "Cleveland Browns", "Dallas Cowboys", "Denver Broncos", "Detroit Lions", "Green Bay Packers", "Houston Texans", "Indianapolis Colts", "Jacksonville Jaguars", "Kansas City Chiefs", "Las Vegas Raiders", "Los Angeles Chargers", "Los Angeles Rams", "Miami Dolphins", "Minnesota Vikings", "New England Patriots", "New Orleans Saints", "New York Giants", "New York Jets", "Philadelphia Eagles", "Pittsburgh Steelers", "San Francisco 49ers", "Seattle Seahawks", "Tampa Bay Buccaneers", "Tennessee Titans", "Washington Commanders"],
+  NBA: ["All Teams", "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets", "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets", "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers", "Los Angeles Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat", "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks", "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns", "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors", "Utah Jazz", "Washington Wizards"],
+  MLB: ["All Teams", "Arizona Diamondbacks", "Atlanta Braves", "Baltimore Orioles", "Boston Red Sox", "Chicago White Sox", "Chicago Cubs", "Cincinnati Reds", "Cleveland Guardians", "Colorado Rockies", "Detroit Tigers", "Houston Astros", "Kansas City Royals", "Los Angeles Angels", "Los Angeles Dodgers", "Miami Marlins", "Milwaukee Brewers", "Minnesota Twins", "New York Yankees", "New York Mets", "Oakland Athletics", "Philadelphia Phillies", "Pittsburgh Pirates", "San Diego Padres", "San Francisco Giants", "Seattle Mariners", "St. Louis Cardinals", "Tampa Bay Rays", "Texas Rangers", "Toronto Blue Jays", "Washington Nationals"],
+  NHL: ["All Teams", "Anaheim Ducks", "Arizona Coyotes", "Boston Bruins", "Buffalo Sabres", "Calgary Flames", "Carolina Hurricanes", "Chicago Blackhawks", "Colorado Avalanche", "Columbus Blue Jackets", "Dallas Stars", "Detroit Red Wings", "Edmonton Oilers", "Florida Panthers", "Los Angeles Kings", "Minnesota Wild", "Montreal Canadiens", "Nashville Predators", "New Jersey Devils", "New York Islanders", "New York Rangers", "Ottawa Senators", "Philadelphia Flyers", "Pittsburgh Penguins", "San Jose Sharks", "Seattle Kraken", "St. Louis Blues", "Tampa Bay Lightning", "Toronto Maple Leafs", "Vancouver Canucks", "Vegas Golden Knights", "Washington Capitals", "Winnipeg Jets"]
+};
 
-    if (!league) {
-        teamSelect.innerHTML = '<option value="">Select Team</option>';
-        return;
-    }
+let currentLeague = "";
 
-    let teams = [];
+const leagueButtons = document.querySelectorAll(".league-buttons button");
+const dropdownContainer = document.getElementById("dropdown-container");
+const teamSelect = document.getElementById("team-select");
+const scheduleDisplay = document.getElementById("schedule-display");
 
-    if (league === 'NFL') {
-        teams = ["Buffalo Bills", "Miami Dolphins", "New England Patriots", "New York Jets",
-                 "Baltimore Ravens", "Cincinnati Bengals", "Cleveland Browns", "Pittsburgh Steelers",
-                 "Houston Texans", "Indianapolis Colts", "Jacksonville Jaguars", "Tennessee Titans",
-                 "Denver Broncos", "Kansas City Chiefs", "Las Vegas Raiders", "Los Angeles Chargers",
-                 "Dallas Cowboys", "New York Giants", "Philadelphia Eagles", "Washington Commanders",
-                 "Chicago Bears", "Detroit Lions", "Green Bay Packers", "Minnesota Vikings",
-                 "Atlanta Falcons", "Carolina Panthers", "New Orleans Saints", "Tampa Bay Buccaneers",
-                 "Arizona Cardinals", "Los Angeles Rams", "San Francisco 49ers", "Seattle Seahawks"];
-    } else if (league === 'NBA') {
-        teams = ["Boston Celtics", "Brooklyn Nets", "New York Knicks", "Philadelphia 76ers", "Toronto Raptors",
-                 "Chicago Bulls", "Cleveland Cavaliers", "Detroit Pistons", "Indiana Pacers", "Milwaukee Bucks",
-                 "Atlanta Hawks", "Charlotte Hornets", "Miami Heat", "Orlando Magic", "Washington Wizards",
-                 "Denver Nuggets", "Minnesota Timberwolves", "Oklahoma City Thunder", "Portland Trail Blazers", "Utah Jazz",
-                 "Golden State Warriors", "Los Angeles Clippers", "Los Angeles Lakers", "Phoenix Suns", "Sacramento Kings",
-                 "Dallas Mavericks", "Houston Rockets", "Memphis Grizzlies", "New Orleans Pelicans", "San Antonio Spurs"];
-    } else if (league === 'MLB') {
-        teams = ["Baltimore Orioles", "Boston Red Sox", "New York Yankees", "Tampa Bay Rays", "Toronto Blue Jays",
-                 "Chicago White Sox", "Cleveland Guardians", "Detroit Tigers", "Kansas City Royals", "Minnesota Twins",
-                 "Houston Astros", "Los Angeles Angels", "Oakland Athletics", "Seattle Mariners", "Texas Rangers",
-                 "Atlanta Braves", "Miami Marlins", "New York Mets", "Philadelphia Phillies", "Washington Nationals",
-                 "Chicago Cubs", "Cincinnati Reds", "Milwaukee Brewers", "Pittsburgh Pirates", "St. Louis Cardinals",
-                 "Arizona Diamondbacks", "Colorado Rockies", "Los Angeles Dodgers", "San Diego Padres", "San Francisco Giants"];
-    } else if (league === 'NHL') {
-        teams = ["Boston Bruins", "Buffalo Sabres", "Detroit Red Wings", "Florida Panthers", "Montreal Canadiens", "Ottawa Senators", "Tampa Bay Lightning", "Toronto Maple Leafs",
-                 "Carolina Hurricanes", "Columbus Blue Jackets", "New Jersey Devils", "New York Islanders", "New York Rangers", "Philadelphia Flyers", "Pittsburgh Penguins", "Washington Capitals",
-                 "Arizona Coyotes", "Chicago Blackhawks", "Colorado Avalanche", "Dallas Stars", "Minnesota Wild", "Nashville Predators", "St. Louis Blues", "Winnipeg Jets",
-                 "Anaheim Ducks", "Calgary Flames", "Edmonton Oilers", "Los Angeles Kings", "San Jose Sharks", "Seattle Kraken", "Vancouver Canucks", "Vegas Golden Knights"];
-    }
-
-    teamSelect.innerHTML = '<option value="">Select Team</option>';
-    teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team;
-        option.textContent = team;
-        teamSelect.appendChild(option);
-    });
+leagueButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    currentLeague = button.getAttribute("data-league");
+    populateTeams(currentLeague);
+    dropdownContainer.style.display = "block";
+    fetchAndDisplaySchedule(currentLeague, "All Teams");
+  });
 });
 
-document.getElementById('teamSelect').addEventListener('change', async function() {
-    const league = document.getElementById('leagueSelect').value;
-    const team = this.value;
-    const scheduleDiv = document.getElementById('schedule');
+teamSelect.addEventListener("change", () => {
+  const selectedTeam = teamSelect.value;
+  fetchAndDisplaySchedule(currentLeague, selectedTeam);
+});
 
-    if (!league || !team) {
-        scheduleDiv.innerHTML = '';
-        return;
-    }
+function populateTeams(league) {
+  teamSelect.innerHTML = "";
+  teams[league].forEach(team => {
+    const option = document.createElement("option");
+    option.value = team;
+    option.textContent = team;
+    teamSelect.appendChild(option);
+  });
+  teamSelect.value = "All Teams";
+}
 
-    const response = await fetch('/get_schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ league, team })
+async function fetchAndDisplaySchedule(league, team) {
+  scheduleDisplay.innerHTML = `<p>Loading schedule...</p>`;
+  try {
+    const response = await fetch("/get_schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ league, team })
     });
-
+    if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
+    renderSchedule(team, data.schedule);
+  } catch (error) {
+    scheduleDisplay.innerHTML = `<p>Error loading schedule.</p>`;
+  }
+}
 
-    if (data.error) {
-        scheduleDiv.innerHTML = `<p>Error: ${data.error}</p>`;
-        return;
-    }
-
-    let html = `<h3>Schedule for ${team} (${league})</h3><ul>`;
-    data.schedule.forEach(game => {
-        html += `<li>${game}</li>`;
+function renderSchedule(team, schedule) {
+  let html = `<h2>${team === "All Teams" ? currentLeague + " League Schedule" : team + " Schedule"}</h2>`;
+  if (schedule.length === 0) {
+    html += "<p>No schedule available.</p>";
+  } else {
+    html += "<div>";
+    schedule.forEach(game => {
+      html += `<div class="game-item">${game}</div>`;
     });
-    html += '</ul>';
-
-    scheduleDiv.innerHTML = html;
-});
+    html += "</div>";
+  }
+  scheduleDisplay.innerHTML = html;
+}
