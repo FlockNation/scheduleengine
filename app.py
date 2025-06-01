@@ -96,18 +96,57 @@ def generate_nfl_schedule(team):
     division = find_division(team, "NFL")
     division_teams = get_teams_in_division("NFL", division)
     conf = get_conference("NFL", division)
+    
     division_opponents = [t for t in division_teams if t != team]
     division_games = generate_balanced_schedule(team, division_opponents, 6, 2)
+    
     same_conf_divs = [d for d in nfl_divisions if get_conference("NFL", d) == conf and d != division]
-    inter_div_teams = random.sample([t for d in same_conf_divs for t in get_teams_in_division("NFL", d)], 4)
+    inter_div_teams = random.sample(
+        [t for d in same_conf_divs for t in get_teams_in_division("NFL", d)],
+        4
+    )
     inter_div_games = generate_balanced_schedule(team, inter_div_teams, 4)
+    
     other_conf_divs = [d for d in nfl_divisions if get_conference("NFL", d) != conf]
-    other_conf_teams = random.sample([t for d in other_conf_divs for t in get_teams_in_division("NFL", d)], 4)
+    other_conf_teams = random.sample(
+        [t for d in other_conf_divs for t in get_teams_in_division("NFL", d)],
+        4
+    )
     other_conf_games = generate_balanced_schedule(team, other_conf_teams, 4)
-    remaining_teams = [t for t in nfl_teams if t != team and t not in division_teams and t not in inter_div_teams and t not in other_conf_teams]
-    extra_games = generate_balanced_schedule(team, random.sample(remaining_teams, 2), 2)
+    
+    used_division_for_inter = None
+    for d in same_conf_divs:
+        div_teams = get_teams_in_division("NFL", d)
+        if any(t in inter_div_teams for t in div_teams):
+            used_division_for_inter = d
+            break
+    remaining_conf_divs = [d for d in same_conf_divs if d != used_division_for_inter]
+    
+    extra_teams = []
+    for d in remaining_conf_divs:
+        teams_in_div = get_teams_in_division("NFL", d)
+        candidates = [t for t in teams_in_div if t != team]
+        extra_teams.append(random.choice(candidates))
+    
+    other_conf_teams_flat = [t for d in other_conf_divs for t in get_teams_in_division("NFL", d)]
+    exclude_teams = division_opponents + inter_div_teams + other_conf_teams + extra_teams
+    candidates = [t for t in other_conf_teams_flat if t not in exclude_teams and t != team]
+    if candidates:
+        extra_teams.append(random.choice(candidates))
+    else:
+        extra_teams.append(random.choice(other_conf_teams_flat))
+    
+    extra_games = generate_balanced_schedule(team, extra_teams, len(extra_teams))
+    
     all_games = division_games + inter_div_games + other_conf_games + extra_games
-    unique_games = list(set(all_games))
+    
+    seen = set()
+    unique_games = []
+    for game in all_games:
+        if game not in seen:
+            seen.add(game)
+            unique_games.append(game)
+    
     if len(unique_games) < 17:
         return unique_games
     return random.sample(unique_games, 17)
