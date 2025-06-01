@@ -17,11 +17,7 @@ leagueButtons.forEach(button => {
     currentLeague = button.getAttribute("data-league");
     populateTeams(currentLeague);
     dropdownContainer.style.display = "block";
-    if (teamSelect.value === "All Teams") {
-      scheduleDisplay.innerHTML = `<p>Please select a specific team to see schedule.</p>`;
-    } else {
-      fetchAndDisplaySchedule(currentLeague, teamSelect.value);
-    }
+    scheduleDisplay.innerHTML = `<p>Please select a specific team to see schedule.</p>`;
   });
 });
 
@@ -46,27 +42,28 @@ function populateTeams(league) {
 }
 
 async function fetchAndDisplaySchedule(league, team) {
-  console.log("Fetching schedule for", league, team);
-  scheduleDisplay.innerHTML = `<p>Loading schedule...</p>`;
+  scheduleDisplay.innerHTML = `<p>Loading schedule for ${team}...</p>`;
   try {
-    const response = await fetch("/generate_schedule", { 
+    const response = await fetch("/generate_schedule", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ league, team }),
     });
-    console.log("Response status:", response.status);
-    if (!response.ok) throw new Error("Network response was not ok");
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch schedule: ${response.status}`);
+    }
+
     const data = await response.json();
-    console.log("Received data:", data);
     renderSchedule(team, data.schedule);
-  } catch (error) {
-    console.error(error);
-    scheduleDisplay.innerHTML = `<p>Error loading schedule.</p>`;
+  } catch (err) {
+    console.error(err);
+    scheduleDisplay.innerHTML = `<p>Error loading schedule for ${team}.</p>`;
   }
 }
 
 function renderSchedule(team, schedule) {
-  let html = `<h2>${team === "All Teams" ? currentLeague + " League Schedule" : team + " Schedule"}</h2>`;
+  let html = `<h2>${team} Schedule</h2>`;
   if (!schedule || schedule.length === 0) {
     html += "<p>No schedule available.</p>";
   } else {
