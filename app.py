@@ -143,42 +143,49 @@ def generate_mlb_schedule(team):
 
     schedule = []
 
-    def add_series(opponents, series_count, games_per_series):
+    def add_series(opponents, series_count, min_games, max_games):
         chosen_teams = random.sample(opponents, min(series_count, len(opponents)))
+        home_away_toggle = True
         for opp in chosen_teams:
-            for game_num in range(1, games_per_series + 1):
-                if game_num % 2 == 1:
-                    matchup = f"{team} vs {opp}"
-                else:
-                    matchup = f"{opp} vs {team}"
-                schedule.append(matchup)
+            games_in_series = random.choice([min_games, max_games])
+            if home_away_toggle:
+                for _ in range(games_in_series):
+                    schedule.append(f"{team} vs {opp}")
+            else:
+                for _ in range(games_in_series):
+                    schedule.append(f"{opp} vs {team}")
+            home_away_toggle = not home_away_toggle
 
     division_series_teams = random.sample(division_teams, min(len(division_teams), 3))
+    home_away_toggle = True
     for opp in division_series_teams:
-        for _ in range(2):
-            for game_num in range(1, 4):
-                if game_num % 2 == 1:
-                    schedule.append(f"{team} vs {opp}")
-                else:
-                    schedule.append(f"{opp} vs {team}")
+        games_in_series = random.choice([3, 4])
+        if home_away_toggle:
+            for _ in range(games_in_series):
+                schedule.append(f"{team} vs {opp}")
+        else:
+            for _ in range(games_in_series):
+                schedule.append(f"{opp} vs {team}")
+        home_away_toggle = not home_away_toggle
 
-    add_series(same_league_teams, 15, 2)
-    add_series(interleague_teams, 15, 3)
+    add_series(same_league_teams, 15, 3, 4)
+    add_series(interleague_teams, 15, 3, 4)
 
-    #Test: random.shuffle(schedule)
     if len(schedule) > 162:
         schedule = schedule[:162]
     elif len(schedule) < 162:
         extra_needed = 162 - len(schedule)
         extra_games = []
-        for _ in range(extra_needed):
+        home_away_toggle = True
+        while len(extra_games) < extra_needed:
             opp = random.choice(division_teams)
-            if len(extra_games) % 2 == 0:
+            if home_away_toggle:
                 extra_games.append(f"{team} vs {opp}")
             else:
                 extra_games.append(f"{opp} vs {team}")
+            home_away_toggle = not home_away_toggle
         schedule += extra_games
-
+        
     return schedule
 
 def generate_nhl_schedule(team):
