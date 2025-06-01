@@ -143,23 +143,29 @@ def generate_mlb_schedule(team):
 
     schedule = []
 
-    def add_series(opponents, series_count, min_games, max_games):
+    def add_series(opponents, series_count, games_per_series):
         chosen_teams = random.sample(opponents, min(series_count, len(opponents)))
         home_away_toggle = True
         for opp in chosen_teams:
-            games_in_series = random.choice([min_games, max_games])
             if home_away_toggle:
-                for _ in range(games_in_series):
+                for _ in range(games_per_series):
                     schedule.append(f"{team} vs {opp}")
             else:
-                for _ in range(games_in_series):
+                for _ in range(games_per_series):
                     schedule.append(f"{opp} vs {team}")
             home_away_toggle = not home_away_toggle
+
+    total_3_game_series = 30
+    total_4_game_series = 18
 
     division_series_teams = random.sample(division_teams, min(len(division_teams), 3))
     home_away_toggle = True
     for opp in division_series_teams:
-        games_in_series = random.choice([3, 4])
+        games_in_series = 3 if total_3_game_series > 0 else 4
+        if games_in_series == 3:
+            total_3_game_series -= 1
+        else:
+            total_4_game_series -= 1
         if home_away_toggle:
             for _ in range(games_in_series):
                 schedule.append(f"{team} vs {opp}")
@@ -168,8 +174,36 @@ def generate_mlb_schedule(team):
                 schedule.append(f"{opp} vs {team}")
         home_away_toggle = not home_away_toggle
 
-    add_series(same_league_teams, 15, 3, 4)
-    add_series(interleague_teams, 15, 3, 4)
+    remaining_3_game_series = total_3_game_series
+    remaining_4_game_series = total_4_game_series
+
+    all_opponents = same_league_teams + interleague_teams
+    random.shuffle(all_opponents)
+    opponents_index = 0
+
+    while remaining_3_game_series > 0 or remaining_4_game_series > 0:
+        if opponents_index >= len(all_opponents):
+            opponents_index = 0
+            random.shuffle(all_opponents)
+        opp = all_opponents[opponents_index]
+        opponents_index += 1
+
+        if remaining_3_game_series > 0:
+            games_in_series = 3
+            remaining_3_game_series -= 1
+        elif remaining_4_game_series > 0:
+            games_in_series = 4
+            remaining_4_game_series -= 1
+        else:
+            break
+
+        if home_away_toggle:
+            for _ in range(games_in_series):
+                schedule.append(f"{team} vs {opp}")
+        else:
+            for _ in range(games_in_series):
+                schedule.append(f"{opp} vs {team}")
+        home_away_toggle = not home_away_toggle
 
     if len(schedule) > 162:
         schedule = schedule[:162]
