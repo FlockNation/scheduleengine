@@ -150,8 +150,10 @@ def generate_schedule():
     data = request.json
     team = data.get("team")
     league = data.get("league")
-    if league not in teams or team not in teams[league]:
-        return jsonify({"error": "Invalid input"}), 400
+    if league not in teams:
+        return jsonify({"error": f"Invalid league: {league}"}), 400
+    if team not in teams[league]:
+        return jsonify({"error": f"Invalid team: {team} for league {league}"}), 400
     if league == "NFL":
         schedule = generate_nfl_schedule(team)
     elif league == "NBA":
