@@ -165,7 +165,7 @@ def generate_mlb_schedule(team):
     add_series(same_league_teams, 15, 2)
     add_series(interleague_teams, 15, 3)
 
-    random.shuffle(schedule)
+    #Test: random.shuffle(schedule)
     if len(schedule) > 162:
         schedule = schedule[:162]
     elif len(schedule) < 162:
