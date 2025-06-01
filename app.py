@@ -144,7 +144,7 @@ def generate_mlb_schedule(team):
     schedule = []
 
     def add_series(opponents, series_count, games_per_series):
-        chosen_teams = random.sample(opponents, series_count)
+        chosen_teams = random.sample(opponents, min(series_count, len(opponents)))
         for opp in chosen_teams:
             for game_num in range(1, games_per_series + 1):
                 if game_num % 2 == 1:
