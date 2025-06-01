@@ -150,6 +150,7 @@ def generate_schedule():
     data = request.json
     team = data.get("team")
     league = data.get("league")
+    print(f"Received request: league={league}, team={team}")
     if league not in teams:
         return jsonify({"error": f"Invalid league: {league}"}), 400
     if team not in teams[league]:
