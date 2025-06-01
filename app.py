@@ -55,260 +55,91 @@ teams = {
 }
 
 def find_division(team, league):
-    if league == "NFL":
-        for div, tlist in nfl_divisions.items():
-            if team in tlist:
-                return div
-    elif league == "NBA":
-        for div, tlist in nba_divisions.items():
-            if team in tlist:
-                return div
-    elif league == "MLB":
-        for div, tlist in mlb_divisions.items():
-            if team in tlist:
-                return div
-    elif league == "NHL":
-        for div, tlist in nhl_divisions.items():
-            if team in tlist:
-                return div
+    div_map = {"NFL": nfl_divisions, "NBA": nba_divisions, "MLB": mlb_divisions, "NHL": nhl_divisions}
+    for div, tlist in div_map[league].items():
+        if team in tlist:
+            return div
     return None
 
 def get_teams_in_division(league, division):
-    if league == "NFL":
-        return nfl_divisions.get(division, [])
-    elif league == "NBA":
-        return nba_divisions.get(division, [])
-    elif league == "MLB":
-        return mlb_divisions.get(division, [])
-    elif league == "NHL":
-        return nhl_divisions.get(division, [])
-    return []
-
-def get_conference_nfl(division):
-    if division.startswith("AFC"):
-        return "AFC"
-    else:
-        return "NFC"
-
-def get_conference_nba(division):
-    east = ["Atlantic", "Central", "Southeast"]
-    if division in east:
-        return "East"
-    else:
-        return "West"
-
-def get_conference_mlb(division):
-    if division.startswith("AL"):
-        return "AL"
-    else:
-        return "NL"
-
-def get_conference_nhl(division):
-    if division in ["Atlantic", "Metropolitan"]:
-        return "Eastern"
-    else:
-        return "Western"
+    div_map = {"NFL": nfl_divisions, "NBA": nba_divisions, "MLB": mlb_divisions, "NHL": nhl_divisions}
+    return div_map[league].get(division, [])
 
 def get_conference(league, division):
     if league == "NFL":
-        return get_conference_nfl(division)
-    elif league == "NBA":
-        return get_conference_nba(division)
-    elif league == "MLB":
-        return get_conference_mlb(division)
-    elif league == "NHL":
-        return get_conference_nhl(division)
+        return "AFC" if division.startswith("AFC") else "NFC"
+    if league == "NBA":
+        return "East" if division in ["Atlantic", "Central", "Southeast"] else "West"
+    if league == "MLB":
+        return "AL" if division.startswith("AL") else "NL"
+    if league == "NHL":
+        return "Eastern" if division in ["Atlantic", "Metropolitan"] else "Western"
     return None
+
+def generate_balanced_schedule(team, opponents, total_games, same_match_count=1):
+    schedule = []
+    count = 0
+    for opp in opponents:
+        for _ in range(same_match_count):
+            if count % 2 == 0:
+                schedule.append(f"{team} vs {opp}")
+            else:
+                schedule.append(f"{opp} vs {team}")
+            count += 1
+    while len(schedule) < total_games:
+        opp = random.choice(opponents)
+        matchup = f"{team} vs {opp}" if schedule.count(f"{team} vs {opp}") <= schedule.count(f"{opp} vs {team}") else f"{opp} vs {team}"
+        schedule.append(matchup)
+    return schedule
 
 def generate_nfl_schedule(team):
     division = find_division(team, "NFL")
     division_teams = get_teams_in_division("NFL", division)
     conf = get_conference("NFL", division)
-
     division_opponents = [t for t in division_teams if t != team]
-    division_games = []
-    for opp in division_opponents:
-        division_games.extend([f"{team} vs {opp}", f"{opp} vs {team}"])
-
+    division_games = generate_balanced_schedule(team, division_opponents, 6, 2)
     same_conf_divs = [d for d in nfl_divisions if get_conference("NFL", d) == conf and d != division]
-    inter_division = random.choice(same_conf_divs)
-    inter_div_teams = get_teams_in_division("NFL", inter_division)
-    inter_div_games = []
-    for opp in inter_div_teams:
-        if len(inter_div_games) >= 4:
-            break
-        home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-        inter_div_games.append(home_away)
-
+    inter_div_teams = random.sample([t for d in same_conf_divs for t in get_teams_in_division("NFL", d)], 4)
+    inter_div_games = generate_balanced_schedule(team, inter_div_teams, 4)
     other_conf_divs = [d for d in nfl_divisions if get_conference("NFL", d) != conf]
-    other_conf_div = random.choice(other_conf_divs)
-    other_conf_teams = get_teams_in_division("NFL", other_conf_div)
-    other_conf_games = []
-    for opp in other_conf_teams:
-        if len(other_conf_games) >= 4:
-            break
-        home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-        other_conf_games.append(home_away)
-      
-    same_conf_teams = []
-    for d in same_conf_divs:
-        same_conf_teams.extend(get_teams_in_division("NFL", d))
-    two_same_pos = random.sample(same_conf_teams, 2)
-    two_same_pos_games = []
-    for opp in two_same_pos:
-        home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-        two_same_pos_games.append(home_away)
-
-    remaining_divs = [d for d in other_conf_divs if d != other_conf_div]
-    if remaining_divs:
-        remaining_div = random.choice(remaining_divs)
-        rem_div_teams = get_teams_in_division("NFL", remaining_div)
-        if rem_div_teams:
-            opp = random.choice(rem_div_teams)
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            interconference_game = [home_away]
-        else:
-            interconference_game = []
-    else:
-        interconference_game = []
-
-    all_games = division_games + inter_div_games + other_conf_games + two_same_pos_games + interconference_game
-    if len(all_games) < 17:
-        filler_pool = [t for t in nfl_teams if t != team and t not in division_opponents]
-        while len(all_games) < 17:
-            opp = random.choice(filler_pool)
-            home_away = random.choice([f"{team} vs {opp}", f"{opp} vs {team}"])
-            if home_away not in all_games:
-                all_games.append(home_away)
-
-    random.shuffle(all_games)
-    return all_games
+    other_conf_teams = random.sample([t for d in other_conf_divs for t in get_teams_in_division("NFL", d)], 4)
+    other_conf_games = generate_balanced_schedule(team, other_conf_teams, 4)
+    remaining_teams = [t for t in nfl_teams if t != team and t not in division_teams and t not in inter_div_teams and t not in other_conf_teams]
+    extra_games = generate_balanced_schedule(team, random.sample(remaining_teams, 2), 2)
+    return random.sample(division_games + inter_div_games + other_conf_games + extra_games, 17)
 
 def generate_nba_schedule(team):
     division = find_division(team, "NBA")
-    division_teams = get_teams_in_division("NBA", division)
+    division_teams = [t for t in get_teams_in_division("NBA", division) if t != team]
     conf = get_conference("NBA", division)
-
-    schedule = []
-
-    division_opponents = [t for t in division_teams if t != team]
-    for opp in division_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 4)
-
-    conf_divs = [d for d in nba_divisions if get_conference("NBA", d) == conf and d != division]
-    conf_teams = []
-    for d in conf_divs:
-        conf_teams.extend(get_teams_in_division("NBA", d))
-
-    conf_opponents = [t for t in conf_teams if t != team]
-    for opp in conf_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 3)
-
-    other_conf_divs = [d for d in nba_divisions if get_conference("NBA", d) != conf]
-    other_conf_teams = []
-    for d in other_conf_divs:
-        other_conf_teams.extend(get_teams_in_division("NBA", d))
-
-    non_conf_opponents = [t for t in other_conf_teams if t != team]
-    for opp in non_conf_opponents:
-        schedule.append(f"{team} vs {opp}")
-
-    random.shuffle(schedule)
-    return schedule
+    conf_teams = [t for d in nba_divisions if get_conference("NBA", d) == conf and d != division for t in get_teams_in_division("NBA", d) if t != team]
+    other_conf_teams = [t for d in nba_divisions if get_conference("NBA", d) != conf for t in get_teams_in_division("NBA", d)]
+    schedule = generate_balanced_schedule(team, division_teams, 16, 4)
+    schedule += generate_balanced_schedule(team, conf_teams, len(conf_teams)*3, 3)
+    schedule += generate_balanced_schedule(team, other_conf_teams, len(other_conf_teams), 1)
+    return random.sample(schedule, 82)
 
 def generate_mlb_schedule(team):
     division = find_division(team, "MLB")
-    division_teams = get_teams_in_division("MLB", division)
+    division_teams = [t for t in get_teams_in_division("MLB", division) if t != team]
     conf = get_conference("MLB", division)
-
-    schedule = []
-
-    def split_series_19():
-        return [3,3,3,4,3,3]
-
-    def split_series_6():
-        return [3,3]
-
-    for opp in division_teams:
-        if opp == team:
-            continue
-        series_lengths = split_series_19()
-        home_away_flag = True
-        for length in series_lengths:
-            for game_num in range(length):
-                if home_away_flag:
-                    game = f"{team} vs {opp}"
-                else:
-                    game = f"{opp} vs {team}"
-                schedule.append(game)
-            home_away_flag = not home_away_flag
-
-    same_league_divisions = [d for d in mlb_divisions if get_conference("MLB", d) == conf and d != division]
-    other_division_teams = []
-    for d in same_league_divisions:
-        other_division_teams.extend(get_teams_in_division("MLB", d))
-
-    for opp in other_division_teams:
-        series_lengths = split_series_6()
-        home_away_flag = True
-        for length in series_lengths:
-            for _ in range(length):
-                if home_away_flag:
-                    game = f"{team} vs {opp}"
-                else:
-                    game = f"{opp} vs {team}"
-                schedule.append(game)
-            home_away_flag = not home_away_flag
-
-    other_league_divisions = [d for d in mlb_divisions if get_conference("MLB", d) != conf]
-    interleague_teams = []
-    for d in other_league_divisions:
-        interleague_teams.extend(get_teams_in_division("MLB", d))
-
-    for opp in interleague_teams:
-        home_away_flag = True
-        series_length = 3
-        for _ in range(series_length):
-            if home_away_flag:
-                game = f"{team} vs {opp}"
-            else:
-                game = f"{opp} vs {team}"
-            schedule.append(game)
-
-    random.shuffle(schedule)
-    return schedule
+    same_league_teams = [t for d in mlb_divisions if get_conference("MLB", d) == conf and d != division for t in get_teams_in_division("MLB", d)]
+    interleague_teams = [t for d in mlb_divisions if get_conference("MLB", d) != conf for t in get_teams_in_division("MLB", d)]
+    schedule = generate_balanced_schedule(team, division_teams, 57, 6)
+    schedule += generate_balanced_schedule(team, same_league_teams, 60, 2)
+    schedule += generate_balanced_schedule(team, interleague_teams, 45, 3)
+    return random.sample(schedule, 162)
 
 def generate_nhl_schedule(team):
     division = find_division(team, "NHL")
-    division_teams = get_teams_in_division("NHL", division)
+    division_teams = [t for t in get_teams_in_division("NHL", division) if t != team]
     conf = get_conference("NHL", division)
-
-    schedule = []
-
-    division_opponents = [t for t in division_teams if t != team]
-    for opp in division_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 6)
-
-    conf_divs = [d for d in nhl_divisions if get_conference("NHL", d) == conf and d != division]
-    conf_teams = []
-    for d in conf_divs:
-        conf_teams.extend(get_teams_in_division("NHL", d))
-
-    conf_opponents = [t for t in conf_teams if t != team]
-    for opp in conf_opponents:
-        schedule.extend([f"{team} vs {opp}"] * 4)
-
-    other_conf_divs = [d for d in nhl_divisions if get_conference("NHL", d) != conf]
-    other_conf_teams = []
-    for d in other_conf_divs:
-        other_conf_teams.extend(get_teams_in_division("NHL", d))
-
-    non_conf_opponents = [t for t in other_conf_teams if t != team]
-    for opp in non_conf_opponents:
-        schedule.append(f"{team} vs {opp}")
-
-    random.shuffle(schedule)
-    return schedule
+    same_conf_teams = [t for d in nhl_divisions if get_conference("NHL", d) == conf and d != division for t in get_teams_in_division("NHL", d)]
+    other_conf_teams = [t for d in nhl_divisions if get_conference("NHL", d) != conf for t in get_teams_in_division("NHL", d)]
+    schedule = generate_balanced_schedule(team, division_teams, len(division_teams)*3, 3)
+    schedule += generate_balanced_schedule(team, same_conf_teams, len(same_conf_teams)*2, 2)
+    schedule += generate_balanced_schedule(team, other_conf_teams, len(other_conf_teams), 1)
+    return random.sample(schedule, 82)
 
 @app.route("/")
 def index():
@@ -319,12 +150,8 @@ def generate_schedule():
     data = request.json
     team = data.get("team")
     league = data.get("league")
-
-    if league not in teams:
-        return jsonify({"error": "Invalid league"}), 400
-    if team not in teams[league]:
-        return jsonify({"error": "Invalid team"}), 400
-
+    if league not in teams or team not in teams[league]:
+        return jsonify({"error": "Invalid input"}), 400
     if league == "NFL":
         schedule = generate_nfl_schedule(team)
     elif league == "NBA":
@@ -335,7 +162,6 @@ def generate_schedule():
         schedule = generate_nhl_schedule(team)
     else:
         schedule = []
-
     return jsonify({"schedule": schedule})
 
 if __name__ == "__main__":
