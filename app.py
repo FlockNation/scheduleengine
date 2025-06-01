@@ -253,7 +253,10 @@ def generate_nhl_schedule(team):
     three_game_opps = [t for t in division_teams if t not in four_game_opps]
     add_games(four_game_opps, 4)
     add_games(three_game_opps, 3)
-    add_games(same_conf_teams, 3)
+    extra_same_conf = random.sample(same_conf_teams, 2)
+    other_same_conf = [t for t in same_conf_teams if t not in extra_same_conf]
+    add_games(extra_same_conf, 4)
+    add_games(other_same_conf, 3)
     add_games(other_conf_teams, 2)
 
     random.shuffle(schedule)
