@@ -120,6 +120,7 @@ def generate_nfl_schedule(team):
     extra_games = generate_balanced_schedule(team, extra_opponents, 3, 1)
 
     all_games = division_games + same_conf_games + inter_conf_games + extra_games
+    random.shuffle(all_games)
     return all_games
     
 def generate_nba_schedule(team):
