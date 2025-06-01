@@ -141,6 +141,7 @@ def generate_nba_schedule(team):
     schedule += generate_balanced_schedule(team, three_game_conf_opponents, 12, 3)
     schedule += generate_balanced_schedule(team, other_conf_teams, 30, 2)
 
+    random.shuffle(schedule)
     return schedule
 
 def generate_mlb_schedule(team):
