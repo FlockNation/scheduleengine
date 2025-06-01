@@ -106,7 +106,11 @@ def generate_nfl_schedule(team):
     other_conf_games = generate_balanced_schedule(team, other_conf_teams, 4)
     remaining_teams = [t for t in nfl_teams if t != team and t not in division_teams and t not in inter_div_teams and t not in other_conf_teams]
     extra_games = generate_balanced_schedule(team, random.sample(remaining_teams, 2), 2)
-    return random.sample(division_games + inter_div_games + other_conf_games + extra_games, 17)
+    all_games = division_games + inter_div_games + other_conf_games + extra_games
+    unique_games = list(set(all_games))
+    if len(unique_games) < 17:
+        return unique_games
+    return random.sample(unique_games, 17)
 
 def generate_nba_schedule(team):
     division = find_division(team, "NBA")
