@@ -127,12 +127,21 @@ def generate_nba_schedule(team):
     division = find_division(team, "NBA")
     division_teams = [t for t in get_teams_in_division("NBA", division) if t != team]
     conf = get_conference("NBA", division)
+
     conf_teams = [t for d in nba_divisions if get_conference("NBA", d) == conf and d != division for t in get_teams_in_division("NBA", d) if t != team]
     other_conf_teams = [t for d in nba_divisions if get_conference("NBA", d) != conf for t in get_teams_in_division("NBA", d)]
-    schedule = generate_balanced_schedule(team, division_teams, 16, 4)
-    schedule += generate_balanced_schedule(team, conf_teams, len(conf_teams)*3, 3)
-    schedule += generate_balanced_schedule(team, other_conf_teams, len(other_conf_teams), 1)
-    return random.sample(schedule, 82)
+
+    schedule = []
+    schedule += generate_balanced_schedule(team, division_teams, 16, 4)
+
+    four_game_conf_opponents = random.sample(conf_teams, 6)
+    three_game_conf_opponents = [t for t in conf_teams if t not in four_game_conf_opponents]
+
+    schedule += generate_balanced_schedule(team, four_game_conf_opponents, 24, 4)
+    schedule += generate_balanced_schedule(team, three_game_conf_opponents, 12, 3)
+    schedule += generate_balanced_schedule(team, other_conf_teams, 30, 2)
+
+    return schedule
 
 def generate_mlb_schedule(team):
     division = find_division(team, "MLB")
@@ -228,10 +237,26 @@ def generate_nhl_schedule(team):
     conf = get_conference("NHL", division)
     same_conf_teams = [t for d in nhl_divisions if get_conference("NHL", d) == conf and d != division for t in get_teams_in_division("NHL", d)]
     other_conf_teams = [t for d in nhl_divisions if get_conference("NHL", d) != conf for t in get_teams_in_division("NHL", d)]
-    schedule = generate_balanced_schedule(team, division_teams, len(division_teams)*3, 3)
-    schedule += generate_balanced_schedule(team, same_conf_teams, len(same_conf_teams)*2, 2)
-    schedule += generate_balanced_schedule(team, other_conf_teams, len(other_conf_teams), 1)
-    return random.sample(schedule, 82)
+
+    schedule = []
+
+    def add_games(opponents, games_per_opponent):
+        for opp in opponents:
+            for i in range(games_per_opponent):
+                if i % 2 == 0:
+                    schedule.append(f"{team} vs {opp}")
+                else:
+                    schedule.append(f"{opp} vs {team}")
+
+    four_game_opps = random.sample(division_teams, 3)
+    three_game_opps = [t for t in division_teams if t not in four_game_opps]
+    add_games(four_game_opps, 4)
+    add_games(three_game_opps, 3)
+    add_games(same_conf_teams, 3)
+    add_games(other_conf_teams, 2)
+
+    random.shuffle(schedule)
+    return schedule[:82]
 
 @app.route("/")
 def index():
