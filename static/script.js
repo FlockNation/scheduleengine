@@ -51,6 +51,7 @@ leagueButtons.forEach(button => {
             </ul>
           </li>
         </ul>
+        return;
       `;
     } else {
       populateTeams(currentLeague);
