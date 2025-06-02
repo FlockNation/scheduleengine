@@ -88,6 +88,10 @@ select {
   text-align: center;
 }
 
+#dropdown-container {
+  display: none;
+}
+
 .schedule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
